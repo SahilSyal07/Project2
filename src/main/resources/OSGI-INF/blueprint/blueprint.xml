@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.0.0"
+    xsi:schemaLocation="http://www.osgi.org/xmlns/blueprint/v1.0.0 https://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+    http://camel.apache.org/schema/blueprint http://camel.apache.org/schema/blueprint/camel-blueprint.xsd">
+
+    <bean class="org.apache.camel.component.restlet.RestletComponent" id="restlet">
+        <property name="maxThreads" value="${MaxRestletThreadValue}"/>
+    </bean>
+
+	<!-- Property file from which all the variables will be read. -->
+	<cm:property-placeholder persistent-id="com.fusedemo"/>
+
+    <camelContext id="_Ctx_Project2" xmlns="http://camel.apache.org/schema/blueprint" streamCache="true">
+      <route id="_RT1_Project2" streamCache="true">
+        <from uri="restlet:http://{{esbHost}}:{{Project2Port}}/{{Project2URL}}?restletMethods=POST"/>
+        <log message="Request received from User_${body} at time_${date:now:yyyy-MM-dd'T'HH:mm:ss:SSS}"/>
+		<!-- Printing all the headers  -->
+        <log message="Headers :- ${in.headers}"/>
+       
+        <!-- Setting Headers by extracting them from Initial Request-->
+        <setHeader headerName="Username">
+        <simple>${in.headers[Username]}</simple>
+        </setHeader>
+        <setHeader headerName="Password">
+        <simple>${in.headers[Password]}</simple>
+        </setHeader>
+       
+        <choice>
+        
+        	<when>
+        	<simple>${header.Username} == ${properties:username} and ${header.Password} == ${properties:password}</simple>
+        	<log message="Credentials Matched!!"/>
+	        <setBody>
+	        <simple>{"Name": "{{Name}}" , "Age":"{{Age}}" , "ResponseMessage":"{{Message}}"}</simple>
+	        </setBody>
+	        <log message="Response sent to User_${body} at time_${date:now:yyyy-MM-dd'T'HH:mm:ss:SSS}"/>
+        	</when>
+        
+        	<otherwise>
+        	<log message="Incorrect Credentials!! "/>
+        	<setBody>
+        	<simple>{"ResponseMessage":"Authentication Failed"}</simple>
+        	</setBody>
+        	</otherwise>
+        
+         </choice>
+        
+        </route>
+    </camelContext>
+</blueprint>
